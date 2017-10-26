@@ -1,0 +1,20 @@
+{
+  "b": "0000xxxxxxxxxxxx",
+  "bc": "0001xxxxxxxxxxxx",
+  "bnc": "0010xxxxxxxxxxxx",
+  "bz": "0011xxxxxxxxxxxx",
+  "bnz": "0100xxxxxxxxxxxx",
+  "bv": "0101xxxxxxxxxxxx",
+  "bnv": "0110xxxxxxxxxxxx",
+  "bs": "0111xxxxxxxxxxxx",
+  "bns": "1000xxxxxxxxxxxx",
+  "call": "1001xxxxxxxxxxxx",
+  "return": "1010000000000000",
+  "pushd": "1011yyyyyyyyyyyy",
+  "push": "11000rrr00000000",
+  "pop": "11001rrr00000000",
+  "add": "11010rrr00000000",
+  "neg": "11011rrr00000000",
+  "or": "11100rrr00000000",
+  "not": "11101rrr00000000"
+}
