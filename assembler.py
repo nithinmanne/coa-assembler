@@ -6,18 +6,23 @@ def mkargparser():
     '''Argument Parse function'''
     parser = argparse.ArgumentParser()
     parser.add_argument('file', help='Assembly file to be converted')
+    parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
     args = parser.parse_args()
-    parsed = runcode(args.file)
+    parsed = runcode(args.file, args.verbose)
     print(*parsed)
 
-def runcode(file):
+def runcode(file, verbose):
     '''Runs the assembler code'''
     with open(file) as filep:
         file = filep.read().split('\n')
     file = list(map(lambda x: x.strip(), file))
     file.append('finalendhopeyoudontusethisstupidlabel:b finalendhopeyoudontusethisstupidlabel')
     actlines = getactline(file)
+    if verbose:
+        print('Number of actual Lines: {}'.format(actlines[-1]))
     tags = getlabel(file, actlines)
+    if verbose:
+        print('Detected Labels: ', tags)
     parsed = parse(file, actlines, tags)
     return parsed
 
