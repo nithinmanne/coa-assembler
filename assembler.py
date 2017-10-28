@@ -20,10 +20,11 @@ def runcode(file, verbose):
     actlines = getactline(file)
     if verbose:
         print('Number of actual Lines: {}'.format(actlines[-1]))
+        print(actlines)
     tags = getlabel(file, actlines)
     if verbose:
         print('Detected Labels: ', tags)
-    parsed = parse(file, actlines, tags)
+    parsed = parse(file, actlines, tags, verbose)
     return parsed
 
 def getactline(file):
@@ -33,7 +34,7 @@ def getactline(file):
     for j in file:
         if ':' in j:
             actlines.append(count)
-            if len(j.split(':')) == 1:
+            if j.split(':')[-1] == '':
                 continue
         else:
             actlines.append(count)
@@ -54,7 +55,7 @@ def getlabel(file, actlines):
         labels[label[0].strip()] = actlines[i]
     return labels
 
-def parse(file, actlines, tags):
+def parse(file, actlines, tags, verbose):
     '''Parse all functions and convert to bits'''
     parsed = []
     with open('config.json') as filep:
@@ -62,6 +63,8 @@ def parse(file, actlines, tags):
     for i, _ in enumerate(file):
         if i != len(file)-1 and actlines[i] == actlines[i+1]:
             continue
+        if verbose:
+            print(file[i], actlines[i])
         remlbl = file[i].strip().split(':')
         if len(remlbl) > 2:
             raise ValueError("Error at Line {}\r\nMultiple ':'".format(i+1))
@@ -76,17 +79,17 @@ def parse(file, actlines, tags):
         if 'x' in cmd:
             if par not in tags:
                 raise ValueError("Error at Line {}\r\nUnknown Label".format(i+1))
-            rtag = tags[par] - actlines[i] - 1
-            rtag = bindigits(rtag, 12)
+            val = tags[par] - actlines[i] - 1
+            rtag = bindigits(val, 12)
             cmd = cmd[:cmd.find('x')] + rtag
         elif 'y' in cmd:
             val = int(par)
             val = bindigits(val, 12)
             cmd = cmd[:cmd.find('y')] + val
         elif 'r' in cmd:
-            rval = int(par[1:])
-            rval = bindigits(rval, 3)
-            cmd = cmd[:cmd.find('r')] + rval
+            val = int(par[1:])
+            val = bindigits(val, 3)
+            cmd = cmd[:cmd.find('r')] + val
             cmd += '0'*(16-len(cmd))
         parsed.append(cmd)
     return parsed
