@@ -72,46 +72,6 @@ def runcode(file, verbose):
         print('Labels:', labels)
     return parsed
 
-
-def parse(file, actlines, tags, verbose):
-    '''Parse all functions and convert to bits'''
-    parsed = []
-    with open('config.json') as filep:
-        config = json.load(filep)
-    for i, _ in enumerate(file):
-        if i != len(file)-1 and actlines[i] == actlines[i+1]:
-            continue
-        if verbose:
-            print(file[i], actlines[i])
-        remlbl = file[i].strip().split(':')
-        if len(remlbl) > 2:
-            raise ValueError("Error at Line {}\r\nMultiple ':'".format(i+1))
-        com = remlbl[-1].strip().split()
-        if len(com) == 1:
-            com = com[0]
-        else:
-            com, par = com
-        if com not in config:
-            raise ValueError("Error at Line {}\r\nUnknown Command".format(i+1))
-        cmd = config[com]
-        if 'x' in cmd:
-            if par not in tags:
-                raise ValueError("Error at Line {}\r\nUnknown Label".format(i+1))
-            val = tags[par] - actlines[i] - 1
-            rtag = bindigits(val, 12)
-            cmd = cmd[:cmd.find('x')] + rtag
-        elif 'y' in cmd:
-            val = int(par)
-            val = bindigits(val, 12)
-            cmd = cmd[:cmd.find('y')] + val
-        elif 'r' in cmd:
-            val = int(par[1:])
-            val = bindigits(val, 3)
-            cmd = cmd[:cmd.find('r')] + val
-            cmd += '0'*(16-len(cmd))
-        parsed.append(cmd)
-    return parsed
-
 def bindigits(num, bits):
     '''Decimal to Binary'''
     if bits <= 0:
