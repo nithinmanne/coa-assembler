@@ -3,7 +3,7 @@ import argparse
 import re
 import json
 
-PATTERN = r'\A(?:(?P<label>\w+) *: *)?(?:(?P<opc>\w+)(?: +(?P<arg>\w+))?)?\Z'
+PATTERN = r'\A(?:(?P<label>\w+) *: *)?(?:(?P<opc>\w+)(?: +(?P<arg>\w+))?)?(?: *#.*)?\Z'
 
 def mkargparser():
     '''Argument Parse function'''
