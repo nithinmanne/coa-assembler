@@ -1,6 +1,9 @@
 '''Assembler for the CPU designed in COA Lab'''
 import argparse
+import re
 import json
+
+PATTERN = r'\A(?:(?P<label>\w+) *: *)?(?:(?P<opc>\w+)(?: +(?P<arg>\w+))?)?\Z'
 
 def mkargparser():
     '''Argument Parse function'''
@@ -13,47 +16,62 @@ def mkargparser():
 
 def runcode(file, verbose):
     '''Runs the assembler code'''
+    with open('config.json') as filep:
+        config = json.load(filep)
     with open(file) as filep:
         file = filep.read().split('\n')
     file = list(map(lambda x: x.strip(), file))
-    file.append('finalendhopeyoudontusethisstupidlabel:b finalendhopeyoudontusethisstupidlabel')
-    actlines = getactline(file)
+    match = re.compile(PATTERN)
+    future, parsed = [], []
+    labels = {}
+    curline = 0
+    for i, j in enumerate(file):
+        reres = match.search(j)
+        if reres is None:
+            raise ValueError("Error at Line {}. Unknown Format\r\n{}".format(i+1, j))
+        reresgd = reres.groupdict()
+        if reresgd['label'] is not None:
+            if reresgd['label'] in labels:
+                raise ValueError("Duplicate Labels at Line {}\r\n{}".format(i+1, j))
+            labels[reresgd['label']] = curline
+        if reresgd['opc'] is None:
+            continue
+        curline += 1
+        if reresgd['opc'] not in config:
+            raise ValueError("Unknown function {} at Line {}\r\n{}".format(
+                reresgd['arg'], i+1, j))
+        cmd = config[reresgd['opc']]
+        if 'x' in cmd:
+            if reresgd['arg'] is None:
+                raise ValueError("Unknown function {} at Line {}\r\n{}".format(
+                    reresgd['arg'], i+1, j))
+            elif reresgd['arg'] not in labels:
+                future.append((len(parsed), reresgd, j))
+            else:
+                val = labels[reresgd['arg']] - curline
+                cmd = cmd.replace('x'*cmd.count('x'), bindigits(val, cmd.count('x')))
+        elif 'y' in cmd:
+            try:
+                val = int(reresgd['arg'])
+            except:
+                raise ValueError("Unknown function {} at Line {}\r\n{}".format(
+                    reresgd['arg'], i+1, j))
+            cmd = cmd.replace('y'*cmd.count('y'), bindigits(val, cmd.count('y')))
+        elif 'r' in cmd:
+            val = int(reresgd['arg'][1:])
+            cmd = cmd.replace('r'*cmd.count('r'), bindigits(val, cmd.count('r')))
+        parsed.append(cmd)
+    for i, reresgd, j in future:
+        if reresgd['arg'] not in labels:
+            raise ValueError("Unknown label at Line {}\r\n{}".format(i+1, j))
+        else:
+            val = labels[reresgd['arg']] - curline
+            parsed[i] = parsed[i].replace('x'*parsed[i].count('x'), bindigits(val, parsed[i].count('x')))
     if verbose:
-        print('Number of actual Lines: {}'.format(actlines[-1]))
-        print(actlines)
-    tags = getlabel(file, actlines)
-    if verbose:
-        print('Detected Labels: ', tags)
-    parsed = parse(file, actlines, tags, verbose)
+        print('Number of actual Lines:', curline)
+        print('Labels:', labels)
     return parsed
 
-def getactline(file):
-    '''Get actual PC code lines for each line'''
-    actlines = []
-    count = 0
-    for j in file:
-        if ':' in j:
-            actlines.append(count)
-            if j.split(':')[-1] == '':
-                continue
-        else:
-            actlines.append(count)
-            if j == '':
-                continue
-        count += 1
-    return actlines
-
-def getlabel(file, actlines):
-    '''Gets labels from code'''
-    labels = {}
-    for i, j in enumerate(file):
-        if ':' not in j:
-            continue
-        label = j.split(':')
-        if label[0].strip() in labels:
-            raise ValueError("Duplicate Labels")
-        labels[label[0].strip()] = actlines[i]
-    return labels
 
 def parse(file, actlines, tags, verbose):
     '''Parse all functions and convert to bits'''
@@ -96,6 +114,8 @@ def parse(file, actlines, tags, verbose):
 
 def bindigits(num, bits):
     '''Decimal to Binary'''
+    if bits <= 0:
+        return ''
     binf = bin(num & int("1"*bits, 2))[2:]
     return ("{0:0>%s}" % (bits)).format(binf)
 
