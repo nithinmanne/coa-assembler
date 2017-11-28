@@ -39,12 +39,12 @@ def runcode(file, verbose):
         curline += 1
         if reresgd['opc'] not in config:
             raise ValueError("Unknown function {} at Line {}\r\n{}".format(
-                reresgd['arg'], i+1, j))
+                reresgd['opc'], i+1, j))
         cmd = config[reresgd['opc']]
         if 'x' in cmd:
             if reresgd['arg'] is None:
                 raise ValueError("Unknown function {} at Line {}\r\n{}".format(
-                    reresgd['arg'], i+1, j))
+                    reresgd['opc'], i+1, j))
             elif reresgd['arg'] not in labels:
                 future.append((len(parsed), reresgd, j))
             else:
@@ -55,18 +55,23 @@ def runcode(file, verbose):
                 val = int(reresgd['arg'])
             except:
                 raise ValueError("Unknown function {} at Line {}\r\n{}".format(
-                    reresgd['arg'], i+1, j))
+                    reresgd['opc'], i+1, j))
             cmd = cmd.replace('y'*cmd.count('y'), bindigits(val, cmd.count('y')))
         elif 'r' in cmd:
             val = int(reresgd['arg'][1:])
             cmd = cmd.replace('r'*cmd.count('r'), bindigits(val, cmd.count('r')))
+        else:
+            if reresgd['arg'] is not None:
+                raise ValueError("Unknown function {} at Line {}\r\n{}".format(
+                    reresgd['opc'], i+1, j))
         parsed.append(cmd)
     for i, reresgd, j in future:
         if reresgd['arg'] not in labels:
             raise ValueError("Unknown label at Line {}\r\n{}".format(i+1, j))
         else:
             val = labels[reresgd['arg']] - curline
-            parsed[i] = parsed[i].replace('x'*parsed[i].count('x'), bindigits(val, parsed[i].count('x')))
+            parsed[i] = parsed[i].replace('x'*parsed[i].count('x'),
+                                          bindigits(val, parsed[i].count('x')))
     if verbose:
         print('Number of actual Lines:', curline)
         print('Labels:', labels)
